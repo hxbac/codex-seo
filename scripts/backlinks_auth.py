@@ -20,6 +20,13 @@ import os
 import sys
 from typing import Optional
 
+# Credentials come from a .env file so they never have to be typed on a command
+# line. See scripts/env_file.py for the search order.
+_ENV_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _ENV_SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _ENV_SCRIPT_DIR)
+import env_file  # noqa: E402,F401
+
 # Import SSRF protection from google_auth (reuse, don't duplicate)
 _SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _SCRIPTS_DIR)
@@ -146,6 +153,10 @@ def check_credentials(service: str) -> dict:
 
     if service == "moz":
         api_key = config.get("moz_api_key")
+        # This function reports credential status; it never calls the Moz
+        # API itself. moz_api.py is the caller that rotates across
+        # MOZ_API_KEY slots on a rejected key -- see env_file.rotate().
+        result["slots"] = len(env_file.slots("moz"))
         if api_key:
             result["available"] = True
             result["method"] = "api_key"
@@ -441,6 +452,8 @@ def main():
                     print(f"         {result['error']}")
                 if result.get("verified_sites"):
                     print(f"         Verified sites: {', '.join(result['verified_sites'])}")
+                if result.get("slots") is not None:
+                    print(f"         Rotation slots: {result['slots']}")
                 if result.get("note"):
                     print(f"         Note: {result['note']}")
                 if result.get("cached_domains") is not None:

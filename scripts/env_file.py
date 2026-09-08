@@ -46,6 +46,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, List, NamedTuple, Optional, TypeVar
 
+try:
+    import requests.exceptions as _requests_exceptions
+except ImportError:  # requests is not a hard dependency of this module
+    _requests_exceptions = None
+
 #: Variables this toolchain reads. Used by --check; loading is not limited to them.
 KNOWN_VARS = (
     "DATAFORSEO_USERNAME",
@@ -537,6 +542,14 @@ def _default_classify(exc: BaseException) -> bool:
         return True
     if isinstance(exc, urllib.error.HTTPError):
         return exc.code in ROTATABLE_HTTP_STATUS
+    # requests.exceptions.HTTPError carries the status on exc.response.status_code
+    # rather than exc.code, and is a completely different class from urllib's
+    # HTTPError. Several callers (dataforseo_labs.py, dataforseo_merchant.py,
+    # moz_api.py) use the requests library, so this module recognizes it too,
+    # without taking a hard dependency on requests being installed.
+    if _requests_exceptions is not None and isinstance(exc, _requests_exceptions.HTTPError):
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        return status in ROTATABLE_HTTP_STATUS
     return False
 
 

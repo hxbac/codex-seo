@@ -30,6 +30,10 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
+# Credentials come from a .env file so they never have to be typed on a command
+# line. See scripts/env_file.py for the search order.
+import env_file  # noqa: E402,F401
+
 try:
     import requests
 except ImportError:
@@ -103,6 +107,25 @@ def _auth_header(username: str, password: str) -> dict[str, str]:
     }
 
 
+def _raise_on_task_status(payload: dict[str, Any]) -> None:
+    """Raise RotatableError for a rotatable DataForSEO task failure.
+
+    DataForSEO answers HTTP 200 even when the task itself failed; the real
+    status is tasks[0].status_code. 40100 to 40399 (auth, payment, quota) is
+    a credential problem and switches the caller to the next slot. 40400
+    (Invalid Path) and 40501 (Invalid Field) are bugs in the request, not
+    the credential, and must never rotate: rotating would swap a precise
+    diagnostic for a misleading "all keys failed" message.
+    """
+    task = (payload.get("tasks") or [{}])[0]
+    status = task.get("status_code")
+    if not isinstance(status, int) or status < 40000:
+        return
+    message = str(task.get("status_message"))
+    if 40100 <= status < 40400:
+        raise env_file.RotatableError(f"task {status}: {message}")
+
+
 # ---------------------------------------------------------------------------
 # API helpers
 # ---------------------------------------------------------------------------
@@ -120,6 +143,7 @@ def _post_task(
     resp.raise_for_status()
     data = resp.json()
 
+    _raise_on_task_status(data)
     if data.get("status_code") != 20000:
         return {
             "error": "api_error",
@@ -254,13 +278,46 @@ def _normalize_seller(item: dict[str, Any]) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Rotation
+# ---------------------------------------------------------------------------
+
+def _run_rotated(attempt) -> dict[str, Any]:
+    """Run `attempt` through env_file.rotate("dataforseo", ...).
+
+    On CredentialsMissing, returns the same structured payload
+    _get_credentials() has always produced, so a caller that already ran
+    that pre-check as a fast fail never sees a different shape here. On
+    AllSlotsFailed or a non-rotatable task-status RuntimeError, returns a
+    structured error dict instead of letting a raw exception traceback out.
+    """
+    try:
+        return env_file.rotate("dataforseo", attempt)
+    except env_file.CredentialsMissing:
+        print(
+            "Error: DATAFORSEO_USERNAME and DATAFORSEO_PASSWORD environment "
+            "variables must be set.",
+            file=sys.stderr,
+        )
+        return {
+            "error": "missing_credentials",
+            "message": (
+                "DataForSEO credentials not found. Set DATAFORSEO_USERNAME and "
+                "DATAFORSEO_PASSWORD environment variables."
+            ),
+        }
+    except env_file.AllSlotsFailed as exc:
+        return {"error": "all_slots_failed", "message": str(exc)}
+    except RuntimeError as exc:
+        return {"error": "api_error", "message": str(exc)}
+
+
+# ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
 
 def cmd_search(args):
     """Search for products on Google Shopping or Amazon."""
-    username, password = _get_credentials()
-    headers = _auth_header(username, password)
+    _get_credentials()  # fast fail with the historical structured message
     marketplace = args.marketplace
 
     endpoint_key = (
@@ -282,23 +339,19 @@ def cmd_search(args):
     if args.price_max is not None:
         payload[0]["price_max"] = args.price_max
 
-    # Post task
-    post_resp = _post_task(endpoint_key, payload, headers)
-    if "error" in post_resp:
-        json.dump(post_resp, sys.stdout, indent=2)
-        return
+    def attempt(slot: env_file.Slot) -> dict[str, Any]:
+        headers = _auth_header(slot.values["DATAFORSEO_USERNAME"], slot.values["DATAFORSEO_PASSWORD"])
+        post_resp = _post_task(endpoint_key, payload, headers)
+        if "error" in post_resp:
+            return post_resp
 
-    task_id = _extract_task_id(post_resp)
-    if not task_id:
-        json.dump(
-            {"error": "no_task_id", "message": "No task ID in response."},
-            sys.stdout,
-            indent=2,
-        )
-        return
+        task_id = _extract_task_id(post_resp)
+        if not task_id:
+            return {"error": "no_task_id", "message": "No task ID in response."}
 
-    # Poll for results
-    result_resp = _poll_results(endpoint_key, task_id, headers)
+        return _poll_results(endpoint_key, task_id, headers)
+
+    result_resp = _run_rotated(attempt)
     if "error" in result_resp:
         json.dump(result_resp, sys.stdout, indent=2)
         return
@@ -337,8 +390,7 @@ def cmd_search(args):
 
 def cmd_sellers(args):
     """Search for sellers on Google Shopping."""
-    username, password = _get_credentials()
-    headers = _auth_header(username, password)
+    _get_credentials()  # fast fail with the historical structured message
 
     payload = [
         {
@@ -348,21 +400,19 @@ def cmd_sellers(args):
         }
     ]
 
-    post_resp = _post_task("google_sellers", payload, headers)
-    if "error" in post_resp:
-        json.dump(post_resp, sys.stdout, indent=2)
-        return
+    def attempt(slot: env_file.Slot) -> dict[str, Any]:
+        headers = _auth_header(slot.values["DATAFORSEO_USERNAME"], slot.values["DATAFORSEO_PASSWORD"])
+        post_resp = _post_task("google_sellers", payload, headers)
+        if "error" in post_resp:
+            return post_resp
 
-    task_id = _extract_task_id(post_resp)
-    if not task_id:
-        json.dump(
-            {"error": "no_task_id", "message": "No task ID in response."},
-            sys.stdout,
-            indent=2,
-        )
-        return
+        task_id = _extract_task_id(post_resp)
+        if not task_id:
+            return {"error": "no_task_id", "message": "No task ID in response."}
 
-    result_resp = _poll_results("google_sellers", task_id, headers)
+        return _poll_results("google_sellers", task_id, headers)
+
+    result_resp = _run_rotated(attempt)
     if "error" in result_resp:
         json.dump(result_resp, sys.stdout, indent=2)
         return
@@ -391,8 +441,7 @@ def cmd_sellers(args):
 
 def cmd_compare(args):
     """Cross-marketplace comparison: Google Shopping vs Amazon."""
-    username, password = _get_credentials()
-    headers = _auth_header(username, password)
+    _get_credentials()  # fast fail with the historical structured message
 
     results = {}
 
@@ -407,19 +456,21 @@ def cmd_compare(args):
             }
         ]
 
-        post_resp = _post_task(endpoint_key, payload, headers)
-        if "error" in post_resp:
-            results[marketplace] = {"error": post_resp.get("message", "API error")}
-            continue
+        def attempt(slot: env_file.Slot, endpoint_key=endpoint_key, payload=payload) -> dict[str, Any]:
+            headers = _auth_header(slot.values["DATAFORSEO_USERNAME"], slot.values["DATAFORSEO_PASSWORD"])
+            post_resp = _post_task(endpoint_key, payload, headers)
+            if "error" in post_resp:
+                return post_resp
 
-        task_id = _extract_task_id(post_resp)
-        if not task_id:
-            results[marketplace] = {"error": "No task ID returned"}
-            continue
+            task_id = _extract_task_id(post_resp)
+            if not task_id:
+                return {"error": "no_task_id", "message": "No task ID returned"}
 
-        result_resp = _poll_results(endpoint_key, task_id, headers)
+            return _poll_results(endpoint_key, task_id, headers)
+
+        result_resp = _run_rotated(attempt)
         if "error" in result_resp:
-            results[marketplace] = {"error": result_resp.get("message", "Poll error")}
+            results[marketplace] = {"error": result_resp.get("message", "API error")}
             continue
 
         items = _extract_items(result_resp)
