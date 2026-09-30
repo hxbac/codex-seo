@@ -62,5 +62,5 @@ Uses `google-ads` library (separate from `google-api-python-client`).
 - **Volume accuracy**: Without active ad spend, Google returns bucketed ranges ("1K-10K", "10K-100K") instead of exact numbers like "14,800"
 - **Competition score**: Measures advertiser competition for ads, NOT organic ranking difficulty
 - **CPC bids**: Reflect what advertisers pay, useful for estimating keyword commercial value
-- **Location targeting**: Use location IDs (2840 = United States, 2826 = United Kingdom)
+- **Location targeting**: Use location IDs (2840 = United States, 2826 = United Kingdom, 2704 = Vietnam)
 - **Language targeting**: Use language IDs (1000 = English, 1003 = Spanish)

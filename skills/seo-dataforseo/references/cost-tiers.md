@@ -1,5 +1,9 @@
 # DataForSEO API Cost Reference
 
+Prices verified as of 2026-09-05. Labs, Keywords Data, Backlinks, Domain
+Analytics, On-Page, and Content Analysis rose ~20% on 2026-07-01; Merchant
+Amazon rose 50%. SERP was not part of that increase.
+
 ## Pricing Tiers (USD per call, standard queue)
 
 | Category | Endpoint | Cost/Call | Notes |
@@ -7,20 +11,19 @@
 | **SERP** | `serp_*_live_advanced` | $0.002 | Per 100 results |
 | **SERP** | `serp_*_live_regular` | $0.001 | Lightweight |
 | **SERP Images** | `serp_google_images_live_*` | $0.002 | 5x with site:/filetype: operators |
-| **Keywords** | `kw_data_google_ads_search_volume` | $0.05 | Per batch of keywords |
-| **Keywords** | `kw_data_google_trends_explore` | $0.01 | Per query |
-| **Labs** | `dataforseo_labs_*_keyword_*` | $0.05 | Ideas, suggestions, related |
-| **Labs** | `dataforseo_labs_bulk_*` | $0.01 | Difficulty, traffic |
-| **Labs** | `dataforseo_labs_*_domain_*` | $0.05 | Competitors, intersection |
-| **On-Page** | `on_page_instant_pages` | $0.01 | Quick analysis |
-| **On-Page** | `on_page_lighthouse` | $0.02 | Full Lighthouse |
-| **Backlinks** | `backlinks_*` | $0.02 | Per sub-call |
-| **Content** | `content_analysis_*` | $0.02 | Search, summary, trends |
-| **Business** | `business_data_*` | $0.05 | Listings search |
-| **AI/GEO** | `ai_optimization_*` | $0.05 | ChatGPT scraper, LLM mentions |
-| **Merchant** | `merchant_*` | $0.02 | Google Shopping, Amazon |
-| **Domain** | `domain_analytics_whois_*` | $0.005 | WHOIS data |
-| **Domain** | `domain_analytics_technologies_*` | $0.01 | Tech stack |
+| **Keywords** | `kw_data_google_ads_search_volume` | $0.06/task + $0.00 | Standard queue; $0.09 on live. Bills per task (batch), not per keyword |
+| **Keywords** | `kw_data_google_trends_explore` | $0.012 | Per query |
+| **Labs** | `dataforseo_labs_*` (all Labs endpoints) | $0.012/task + $0.00012/item | Per task plus per item -- e.g. 1000 keywords = $0.132, not a flat fee |
+| **On-Page** | `on_page_instant_pages` | $0.012 | Quick analysis |
+| **On-Page** | `on_page_lighthouse` | $0.024 | Full Lighthouse |
+| **Backlinks** | `backlinks_*` | $0.024 | Per sub-call ($0.06 for `backlinks_domain_intersection`) |
+| **Content** | `content_analysis_*` | $0.024 | Search, summary, trends |
+| **Business** | `business_data_*` | $0.05 | Listings search (not part of the 2026-07-01 increase) |
+| **AI/GEO** | `ai_optimization_chat_gpt_scraper`, `ai_opt_llm_ment_*` | $0.05 | ChatGPT scraper, LLM mentions (not part of the 2026-07-01 increase) |
+| **Merchant** | `merchant_google_*` | $0.02 | Google Shopping (unaffected) |
+| **Merchant** | `merchant_amazon_products_search` | $0.03 | Amazon (+50% on 2026-07-01) |
+| **Domain** | `domain_analytics_whois_*` | $0.006 | WHOIS data |
+| **Domain** | `domain_analytics_technologies_*` | $0.012 | Tech stack |
 
 ## Budget Presets
 

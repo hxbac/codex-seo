@@ -1,6 +1,6 @@
 ---
 name: seo
-description: "Comprehensive SEO analysis for any website, page, business, or topic. Full site audits, SEO checks, single-page analysis, technical SEO (crawlability, indexability, Core Web Vitals with INP), schema markup, content quality (E-E-A-T), image optimization, sitemap analysis, GEO for AI Overviews/ChatGPT/Perplexity, and SEO best-practice planning. Industry detection for SaaS, e-commerce, local, publishers, agencies. Triggers on: SEO, audit, full SEO check, SEO best practices, optimize my site, ranking, organic search, schema, Core Web Vitals, sitemap, E-E-A-T, AI Overviews, GEO, technical SEO, content quality, page speed, structured data."
+description: "Comprehensive SEO analysis for any website, page, business, or topic. Full site audits, SEO checks, single-page analysis, technical SEO (crawlability, indexability, Core Web Vitals with INP), schema markup, content quality (E-E-A-T), image optimization, sitemap analysis, GEO for AI Overviews/ChatGPT/Perplexity, and SEO best-practice planning. Industry detection for SaaS, e-commerce, local, publishers, agencies. Triggers on: SEO, audit, full SEO check, SEO best practices, optimize my site, ranking, organic search, schema, Core Web Vitals, sitemap, E-E-A-T, AI Overviews, GEO, technical SEO, content quality, page speed, structured data. Also use when the request is written in Vietnamese, for example \"kiểm tra SEO website\", \"audit web\", \"soát SEO tổng thể\", \"web tôi có vấn đề gì\"."
 user-invokable: true
 argument-hint: "[command] [url]"
 license: MIT

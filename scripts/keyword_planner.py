@@ -114,7 +114,7 @@ def _build_ads_client() -> Optional[object]:
 def generate_keyword_ideas(
     seed_keywords: list,
     language_id: str = "1000",
-    location_id: str = "2840",
+    location_id: str = "2704",
     limit: int = 50,
 ) -> dict:
     """
@@ -123,7 +123,7 @@ def generate_keyword_ideas(
     Args:
         seed_keywords: List of seed keyword strings.
         language_id: Language ID (1000 = English).
-        location_id: Location ID (2840 = United States).
+        location_id: Location ID (2704 = Vietnam).
         limit: Max results.
 
     Returns:
@@ -191,7 +191,7 @@ def generate_keyword_ideas(
 def get_keyword_volumes(
     keywords: list,
     language_id: str = "1000",
-    location_id: str = "2840",
+    location_id: str = "2704",
 ) -> dict:
     """
     Get search volume for specific keywords.
@@ -259,7 +259,7 @@ def main():
     parser.add_argument("keywords", help="Seed keyword(s), comma-separated for volume")
     parser.add_argument("--limit", type=int, default=50, help="Max results for ideas (default: 50)")
     parser.add_argument("--language", default="1000", help="Language ID (default: 1000 = English)")
-    parser.add_argument("--location", default="2840", help="Location ID (default: 2840 = US)")
+    parser.add_argument("--location", default="2704", help="Location ID (default: 2704 = Vietnam)")
     parser.add_argument("--json", "-j", action="store_true", help="Output as JSON")
 
     args = parser.parse_args()

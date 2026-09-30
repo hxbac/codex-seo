@@ -5,6 +5,7 @@ description: >
   technical meta tags, schema, images, and performance. Use when user says
   "analyze this page", "check page SEO", "single URL", "check this page",
   "page analysis", or provides a single URL for review.
+  Also use when the request is written in Vietnamese, for example "kiểm tra một trang", "trang này SEO ổn chưa", "soát trang này".
 user-invokable: true
 argument-hint: "[url]"
 license: MIT

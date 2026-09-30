@@ -4,6 +4,7 @@ description: >
   Analyze existing XML sitemaps or generate new ones with industry templates.
   Validates format, URLs, and structure. Use when user says "sitemap",
   "generate sitemap", "sitemap issues", or "XML sitemap".
+  Also use when the request is written in Vietnamese, for example "sitemap", "sơ đồ trang", "Google chưa index trang".
 user-invokable: true
 argument-hint: "[url or generate]"
 license: MIT

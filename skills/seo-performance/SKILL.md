@@ -1,6 +1,6 @@
 ---
 name: seo-performance
-description: Performance specialist for full audits. Measures CWV (LCP/INP/CLS), Lighthouse score signals, and emits deterministic report artifacts.
+description: "Performance specialist for full audits. Measures CWV (LCP/INP/CLS), Lighthouse score signals, and emits deterministic report artifacts. Also use when the request is written in Vietnamese, for example \"tốc độ tải trang\", \"Core Web Vitals\", \"điểm Lighthouse\", \"web tôi chạy chậm\"."
 ---
 
 # Performance Specialist

@@ -5,6 +5,7 @@ description: >
   Use when user says "crawl site", "map site", "full crawl",
   "find all pages", "broken links", "site structure",
   "discover pages", "JS rendering", or needs site-wide analysis.
+  Also use when the request is written in Vietnamese, for example "quét toàn bộ website", "lập bản đồ site", "tìm tất cả các trang", "liên kết hỏng", "cấu trúc website".
 user-invokable: true
 argument-hint: "[command] <url>"
 license: MIT

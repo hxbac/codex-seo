@@ -6,6 +6,7 @@ description: >
   knowledge base (41 prompts, CC BY 4.0). Use when user says "FLOW", "FLOW
   framework", "seo flow", "evidence-led SEO", "find leverage optimize win",
   or wants stage-specific SEO prompts.
+  Also use when the request is written in Vietnamese, for example "FLOW", "quy trình dựa trên bằng chứng".
 user-invokable: true
 argument-hint: "[stage] [url|topic]"
 license: MIT

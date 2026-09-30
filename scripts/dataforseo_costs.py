@@ -20,6 +20,12 @@ Usage:
     python dataforseo_costs.py config [--mode always|threshold|none] [--threshold AMOUNT] [--daily-limit AMOUNT]
     python dataforseo_costs.py reset
 
+--count is the number of ITEMS in a single batched call (e.g. keywords in
+one search_volume task), not a count of repeated calls. DataForSEO Labs and
+Keywords Data endpoints bill per task plus a small per-item fee, so batching
+1000 keywords into one --count 1000 call is always cheaper than 1000 calls
+at --count 1 each.
+
 Original concept: Matej Marjanovic (Pro Hub Challenge)
 Security fixes: config path corrected to ~/.config/codex-seo/
 """
@@ -51,12 +57,48 @@ def _read_path(primary: Path, legacy: Path) -> Path:
         return primary
     return legacy
 
+# ----- per-item cost model (USD, standard queue) -----
+# Source: https://dataforseo.com/pricing -- verified as of 2026-09-05.
+# DataForSEO Labs and a handful of other endpoints bill per task PLUS per
+# item (e.g. per keyword) rather than a flat fee per call. Modeling that
+# distinction matters: a 1000-keyword Labs task costs $0.132, not the $0.05
+# flat rate the old table charged -- underestimating it 2.6x let a call that
+# size slip past the budget gate unnoticed. Endpoints not listed here still
+# bill flat-per-call and are looked up in COST_TABLE below.
+COST_MODEL = {
+    # DataForSEO Labs moved from a flat $0.05/call to $0.012/task + $0.00012/item
+    # on 2026-07-01 (~20% list-price increase plus the new per-item component).
+    "dataforseo_labs_google_keyword_ideas": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_google_keyword_suggestions": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_google_related_keywords": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_bulk_keyword_difficulty": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_search_intent": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_google_competitors_domain": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_google_domain_rank_overview": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_bulk_traffic_estimation": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_google_ranked_keywords": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_google_relevant_pages": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_google_domain_intersection": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_google_subdomains": {"per_task": 0.012, "per_item": 0.00012},
+    "dataforseo_labs_google_top_searches": {"per_task": 0.012, "per_item": 0.00012},
+    # Keywords Data search_volume bills per task (batch of keywords), not per
+    # keyword -- $0.05 -> $0.06 standard queue ($0.09 on live). No per-item
+    # component: the task price already covers the whole batch.
+    "kw_data_google_ads_search_volume": {"per_task": 0.06, "per_item": 0.0},
+    # SERP was not part of the 2026-07-01 increase; modeled here too so it is
+    # never accidentally caught by a future flat-fee migration.
+    "serp_organic_live_advanced": {"per_task": 0.002, "per_item": 0.0},
+}
+
 # ----- cost table (USD per call, standard queue) -----
-# Source: https://dataforseo.com/pricing
+# Fallback for endpoints not yet migrated to COST_MODEL above -- still a flat
+# fee per call, item_count is ignored (an endpoint here that turns out to
+# bill per item should move up into COST_MODEL instead of being patched here).
+# Source: https://dataforseo.com/pricing -- verified as of 2026-09-05.
 # Prices are approximate; actual costs may vary by parameters.
+# Labs and kw_data_google_ads_search_volume moved to COST_MODEL (see above).
 COST_TABLE = {
-    # SERP
-    "serp_organic_live_advanced": 0.002,
+    # SERP (unaffected by the 2026-07-01 increase)
     "serp_organic_live_regular": 0.001,
     "serp_google_images_live_advanced": 0.002,
     "serp_google_images_live_regular": 0.001,
@@ -64,56 +106,88 @@ COST_TABLE = {
     "serp_youtube_video_info_live_advanced": 0.002,
     "serp_youtube_video_comments_live_advanced": 0.002,
     "serp_youtube_video_subtitles_live_advanced": 0.002,
-    # Keywords Data
-    "kw_data_google_ads_search_volume": 0.05,
-    "kw_data_google_trends_explore": 0.01,
-    # DataForSEO Labs
-    "dataforseo_labs_google_keyword_ideas": 0.05,
-    "dataforseo_labs_google_keyword_suggestions": 0.05,
-    "dataforseo_labs_google_related_keywords": 0.05,
-    "dataforseo_labs_bulk_keyword_difficulty": 0.01,
-    "dataforseo_labs_search_intent": 0.01,
-    "dataforseo_labs_google_competitors_domain": 0.05,
-    "dataforseo_labs_google_domain_rank_overview": 0.01,
-    "dataforseo_labs_bulk_traffic_estimation": 0.01,
-    "dataforseo_labs_google_ranked_keywords": 0.05,
-    "dataforseo_labs_google_relevant_pages": 0.05,
-    "dataforseo_labs_google_domain_intersection": 0.05,
-    "dataforseo_labs_google_subdomains": 0.05,
-    "dataforseo_labs_google_top_searches": 0.05,
-    # On-Page
-    "on_page_instant_pages": 0.01,
-    "on_page_content_parsing": 0.01,
-    "on_page_lighthouse": 0.02,
-    # Backlinks
-    "backlinks_summary": 0.02,
-    "backlinks_backlinks": 0.02,
-    "backlinks_anchors": 0.02,
-    "backlinks_referring_domains": 0.02,
-    "backlinks_bulk_spam_score": 0.01,
-    "backlinks_timeseries_summary": 0.02,
-    "backlinks_domain_intersection": 0.05,
-    # Domain Analytics
-    "domain_analytics_technologies_domain_technologies": 0.01,
-    "domain_analytics_whois_overview": 0.005,
-    # Content Analysis
-    "content_analysis_search": 0.02,
-    "content_analysis_summary": 0.02,
-    "content_analysis_phrase_trends": 0.02,
-    # Business Data
+    # Keywords Data (+20% on 2026-07-01)
+    "kw_data_google_trends_explore": 0.012,
+    # On-Page (+20% on 2026-07-01)
+    "on_page_instant_pages": 0.012,
+    "on_page_content_parsing": 0.012,
+    "on_page_lighthouse": 0.024,
+    # Backlinks (+20% on 2026-07-01)
+    "backlinks_summary": 0.024,
+    "backlinks_backlinks": 0.024,
+    "backlinks_anchors": 0.024,
+    "backlinks_referring_domains": 0.024,
+    "backlinks_bulk_spam_score": 0.012,
+    "backlinks_timeseries_summary": 0.024,
+    "backlinks_domain_intersection": 0.06,
+    # Domain Analytics (+20% on 2026-07-01)
+    "domain_analytics_technologies_domain_technologies": 0.012,
+    "domain_analytics_whois_overview": 0.006,
+    # Content Analysis (+20% on 2026-07-01)
+    "content_analysis_search": 0.024,
+    "content_analysis_summary": 0.024,
+    "content_analysis_phrase_trends": 0.024,
+    # Business Data (not part of the 2026-07-01 increase)
     "business_data_business_listings_search": 0.05,
-    # AI / GEO
+    # AI / GEO (not part of the 2026-07-01 increase)
     "ai_optimization_chat_gpt_scraper": 0.05,
     "ai_opt_llm_ment_search": 0.05,
     "ai_opt_llm_ment_top_domains": 0.05,
     "ai_opt_llm_ment_top_pages": 0.05,
     "ai_opt_llm_ment_agg_metrics": 0.05,
     "ai_opt_llm_ment_cross_agg_metrics": 0.05,
-    # Merchant (e-commerce)
+    # Merchant (e-commerce) -- Amazon rose 50% on 2026-07-01, Google unaffected
     "merchant_google_products_search": 0.02,
-    "merchant_amazon_products_search": 0.02,
+    "merchant_amazon_products_search": 0.03,
     "merchant_google_sellers_search": 0.02,
 }
+
+# Conservative fallback for an endpoint with no known price at all (neither
+# COST_MODEL nor COST_TABLE). Deliberately at the high end of the table so an
+# unrecognized endpoint is more likely to trip approval than sail through.
+DEFAULT_COST = 0.06
+
+
+def estimate(endpoint: str, item_count: int = 1) -> float:
+    """Estimate the USD cost of one call to `endpoint`.
+
+    `item_count` is the number of items in a SINGLE task/call (e.g. keywords
+    batched into one search_volume request), not a count of repeated calls --
+    DataForSEO Labs and Keywords Data bill per task, so batching keywords into
+    one call is always cheaper than calling once per keyword.
+
+    Resolution order: COST_MODEL (per-task + per-item) -> COST_TABLE (flat
+    per-call, item_count ignored) -> DEFAULT_COST.
+    """
+    model = COST_MODEL.get(endpoint)
+    if model is not None:
+        return round(model["per_task"] + model["per_item"] * item_count, 6)
+    unit_cost = COST_TABLE.get(endpoint)
+    if unit_cost is not None:
+        return round(unit_cost, 6)
+    return DEFAULT_COST
+
+
+def _known_endpoint(endpoint):
+    """True if `endpoint` has a real price in COST_MODEL or COST_TABLE."""
+    return endpoint in COST_MODEL or endpoint in COST_TABLE
+
+
+def _fuzzy_matches(endpoint):
+    """Substring-match `endpoint` against every known endpoint name."""
+    return [k for k in list(COST_MODEL) + list(COST_TABLE) if endpoint in k]
+
+
+def _cost_breakdown(endpoint):
+    """Extra JSON fields describing how an endpoint's cost was derived."""
+    model = COST_MODEL.get(endpoint)
+    if model is not None:
+        return {"per_task_usd": model["per_task"], "per_item_usd": model["per_item"]}
+    unit_cost = COST_TABLE.get(endpoint)
+    if unit_cost is not None:
+        return {"unit_cost_usd": unit_cost}
+    return {}
+
 
 # Endpoints that always require confirmation regardless of mode
 WARN_ENDPOINTS = {
@@ -207,11 +281,9 @@ def cmd_estimate(args):
     """Estimate cost for an API call."""
     endpoint = args.endpoint
     count = args.count or 1
-    unit_cost = COST_TABLE.get(endpoint)
 
-    if unit_cost is None:
-        # Try fuzzy match
-        matches = [k for k in COST_TABLE if endpoint in k]
+    if not _known_endpoint(endpoint):
+        matches = _fuzzy_matches(endpoint)
         if matches:
             result = {
                 "status": "unknown_endpoint",
@@ -228,14 +300,14 @@ def cmd_estimate(args):
         json.dump(result, sys.stdout, indent=2)
         return
 
-    total = unit_cost * count
+    total = estimate(endpoint, count)
     result = {
         "status": "estimated",
         "endpoint": endpoint,
-        "unit_cost_usd": unit_cost,
-        "count": count,
+        "item_count": count,
         "total_cost_usd": round(total, 4),
     }
+    result.update(_cost_breakdown(endpoint))
     json.dump(result, sys.stdout, indent=2)
 
 
@@ -245,18 +317,17 @@ def cmd_check(args):
     ledger = _load_ledger()
     endpoint = args.endpoint
     count = args.count or 1
-    unit_cost = COST_TABLE.get(endpoint)
-    if unit_cost is None:
+    if not _known_endpoint(endpoint):
         result = {
             "status": "needs_approval",
             "endpoint": endpoint,
             "approval_reason": "unknown_endpoint",
             "message": f"Unknown endpoint '{endpoint}' — cost not in database. Requires explicit approval.",
-            "estimated_cost_usd": 0.05,
+            "estimated_cost_usd": DEFAULT_COST,
         }
         json.dump(result, sys.stdout, indent=2)
         return
-    total = unit_cost * count
+    total = estimate(endpoint, count)
     today_total = _today_spend(ledger)
     daily_limit = cfg.get("daily_limit", 10.00)
     mode = cfg.get("mode", "threshold")
@@ -293,12 +364,12 @@ def cmd_check(args):
     result = {
         "status": "needs_approval" if needs_approval else "approved",
         "endpoint": endpoint,
-        "unit_cost_usd": unit_cost,
-        "count": count,
+        "item_count": count,
         "total_cost_usd": round(total, 4),
         "today_spend_usd": round(today_total, 4),
         "daily_remaining_usd": round(daily_limit - today_total, 4),
     }
+    result.update(_cost_breakdown(endpoint))
     if needs_approval:
         result["approval_reason"] = approval_reason
         result["message"] = (
@@ -465,12 +536,12 @@ def main():
     # estimate
     p_est = sub.add_parser("estimate", help="Estimate cost for an API call")
     p_est.add_argument("endpoint", help="DataForSEO MCP tool name")
-    p_est.add_argument("--count", type=int, default=1, help="Number of calls")
+    p_est.add_argument("--count", type=int, default=1, help="Items in one batched call (default: 1)")
 
     # check
     p_chk = sub.add_parser("check", help="Check if call should proceed")
     p_chk.add_argument("endpoint", help="DataForSEO MCP tool name")
-    p_chk.add_argument("--count", type=int, default=1, help="Number of calls")
+    p_chk.add_argument("--count", type=int, default=1, help="Items in one batched call (default: 1)")
 
     # log
     p_log = sub.add_parser("log", help="Log a completed API call cost")

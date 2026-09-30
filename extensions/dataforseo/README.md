@@ -144,7 +144,7 @@ When installed, other Codex SEO skills automatically detect DataForSEO availabil
 
 ### Module not available
 
-If a specific command fails, check that the module is in `ENABLED_MODULES` in your settings.json. All 9 modules should be listed.
+If a specific command fails, check that the module is in `ENABLED_MODULES` in your settings.json. The installer enables 4 modules by default (`SERP`, `KEYWORDS_DATA`, `DATAFORSEO_LABS`, `ONPAGE`); the other 5 (`BACKLINKS`, `DOMAIN_ANALYTICS`, `BUSINESS_DATA`, `CONTENT_ANALYSIS`, `AI_OPTIMIZATION`) must be added manually -- see `docs/DATAFORSEO-SETUP.md`.
 
 ## Uninstall
 

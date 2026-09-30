@@ -7,6 +7,7 @@ description: >
   "SEO best practices for <topic>", "content strategy", "keyword strategy",
   "content calendar", "site architecture", "SEO roadmap", or asks for
   organic growth guidance without a specific URL.
+  Also use when the request is written in Vietnamese, for example "kế hoạch SEO", "lộ trình SEO", "làm gì trước làm gì sau".
 user-invokable: true
 argument-hint: "[business-type]"
 license: MIT

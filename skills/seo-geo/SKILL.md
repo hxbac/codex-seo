@@ -8,6 +8,7 @@ description: >
   platform-specific optimization. Use when user says "AI Overviews", "SGE",
   "GEO", "AI search", "LLM optimization", "Perplexity", "AI citations",
   "ChatGPT search", or "AI visibility".
+  Also use when the request is written in Vietnamese, for example "AI Overviews", "ChatGPT có nhắc web tôi không", "tối ưu cho AI", "xuất hiện trên AI".
 user-invokable: true
 argument-hint: "[url]"
 license: MIT

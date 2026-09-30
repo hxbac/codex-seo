@@ -7,6 +7,7 @@ description: >
   from DataForSEO Merchant API. Use when user says "ecommerce SEO", "product SEO",
   "Google Shopping", "marketplace SEO", "product schema", "Amazon SEO",
   "product listings", "shopping ads", or "merchant SEO".
+  Also use when the request is written in Vietnamese, for example "web bán hàng", "trang sản phẩm", "sàn thương mại điện tử", "SEO cho shop".
 user-invokable: true
 argument-hint: "<url or keyword>"
 license: MIT

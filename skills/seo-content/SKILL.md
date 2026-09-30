@@ -4,6 +4,7 @@ description: >
   Content quality and E-E-A-T analysis with AI citation readiness assessment.
   Use when user says "content quality", "E-E-A-T", "content analysis",
   "readability check", "thin content", or "content audit".
+  Also use when the request is written in Vietnamese, for example "chất lượng nội dung", "nội dung đã tốt chưa", "đánh giá nội dung trang".
 user-invokable: true
 argument-hint: "[url]"
 license: MIT

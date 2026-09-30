@@ -8,6 +8,7 @@ description: >
   Use when user says "topic cluster", "content cluster", "semantic clustering",
   "pillar page", "hub and spoke", "content architecture", "keyword grouping",
   or "cluster plan".
+  Also use when the request is written in Vietnamese, for example "cụm từ khoá", "nhóm chủ đề", "topic cluster", "chia nhóm nội dung".
 user-invokable: true
 argument-hint: "<seed-keyword or url>"
 license: MIT

@@ -97,7 +97,7 @@ Diagonal is always 10 (a keyword overlaps perfectly with itself).
 ## Data Source Priority
 
 1. **DataForSEO** (if available): Most reliable, consistent SERP data. Use
-   `serp_organic_live_advanced` with `location_code: 2840` (US) and `language_code: "en"`.
+   `serp_organic_live_advanced` with `location_code: 2704` (Vietnam) and `language_code: "vi"`.
 2. **WebSearch** (fallback): Adequate for clustering but results may vary by session.
    Run multiple searches for the same keyword and use the most common result set.
 

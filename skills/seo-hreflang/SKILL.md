@@ -5,6 +5,7 @@ description: >
   common mistakes, validates language/region codes, and generates correct
   hreflang implementations. Use when user says "hreflang", "i18n SEO",
   "international SEO", "multi-language", "multi-region", or "language tags".
+  Also use when the request is written in Vietnamese, for example "hreflang", "đa ngôn ngữ", "bản tiếng Anh và tiếng Việt", "sai ngôn ngữ".
 user-invokable: true
 argument-hint: "[url]"
 license: MIT

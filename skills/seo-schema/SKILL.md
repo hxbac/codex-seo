@@ -4,6 +4,7 @@ description: >
   Detect, validate, and generate Schema.org structured data. JSON-LD format
   preferred. Use when user says "schema", "structured data", "rich results",
   "JSON-LD", or "markup".
+  Also use when the request is written in Vietnamese, for example "schema", "dữ liệu có cấu trúc", "JSON-LD", "đánh dấu dữ liệu".
 user-invokable: true
 argument-hint: "[url]"
 license: MIT

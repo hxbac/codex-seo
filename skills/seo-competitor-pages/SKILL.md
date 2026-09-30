@@ -6,6 +6,7 @@ description: >
   and conversion optimization. Use when user says "comparison page", "vs page",
   "alternatives page", "competitor comparison", "X vs Y", "versus",
   "compare competitors", or "alternative to".
+  Also use when the request is written in Vietnamese, for example "đối thủ", "so với đối thủ", "trang đối thủ xếp trên tôi".
 user-invokable: true
 argument-hint: "[url or generate] [competitor]"
 license: MIT

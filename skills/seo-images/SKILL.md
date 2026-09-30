@@ -7,6 +7,7 @@ description: >
   IPTC/XMP metadata injection). Use when user says "image optimization",
   "alt text", "image SEO", "image size", "image audit", "optimize images",
   "image metadata", "image SERP", "convert to webp", or "image file optimize".
+  Also use when the request is written in Vietnamese, for example "tối ưu ảnh", "ảnh nặng quá", "alt text", "ảnh làm web chậm".
 user-invokable: true
 argument-hint: "[url]"
 license: MIT

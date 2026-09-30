@@ -15,8 +15,8 @@ Endpoint details for Google Shopping and Amazon marketplace data.
 
 **Parameters:**
 - `keyword` (required) -- search query
-- `location_code` (default: 2840 = US) -- DataForSEO location ID
-- `language_code` (default: "en") -- language
+- `location_code` (default: 2704 = Vietnam) -- DataForSEO location ID
+- `language_code` (default: "vi") -- language
 - `price_min` / `price_max` (optional) -- filter by price range
 - `sort_by` (optional) -- "relevance", "price_low_to_high", "price_high_to_low", "rating"
 - `depth` (optional, default: 100) -- number of results
@@ -63,8 +63,8 @@ Endpoint details for Google Shopping and Amazon marketplace data.
 
 **Parameters:**
 - `keyword` (required) -- search query
-- `location_code` (default: 2840 = US)
-- `language_code` (default: "en")
+- `location_code` (default: 2704 = Vietnam)
+- `language_code` (default: "vi")
 - `depth` (optional, default: 100)
 - `sort_by` (optional) -- "relevance", "price_low_to_high", "price_high_to_low", "avg_customer_review"
 

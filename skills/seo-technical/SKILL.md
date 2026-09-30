@@ -5,6 +5,7 @@ description: >
   URL structure, mobile, Core Web Vitals, structured data, JavaScript rendering,
   and IndexNow protocol. Use when user says "technical SEO", "crawl issues",
   "robots.txt", "Core Web Vitals", "site speed", or "security headers".
+  Also use when the request is written in Vietnamese, for example "SEO kỹ thuật", "crawl", "index", "robots.txt", "Google không vào được".
 user-invokable: true
 argument-hint: "[url]"
 license: MIT

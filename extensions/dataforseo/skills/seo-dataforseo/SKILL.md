@@ -9,6 +9,7 @@ description: >
   installed. Use when user says "dataforseo", "live SERP", "keyword volume",
   "backlink data", "competitor data", "AI visibility check", "LLM mentions",
   "image SERP", "google images", "image rankings", or "real search data".
+  Also use when the request is written in Vietnamese, for example "volume từ khoá", "tra từ khoá", "lượng tìm kiếm", "từ khoá này bao nhiêu search".
 user-invokable: true
 argument-hint: "[command] [query]"
 license: MIT
@@ -122,7 +123,7 @@ Fetch live Google organic search results.
 
 **MCP tools:** `serp_organic_live_advanced`
 
-**Default parameters:** location_code=2840 (US), language_code=en, device=desktop, depth=100
+**Default parameters:** location_code=2704 (Vietnam), language_code=vi, device=desktop, depth=100
 
 **Also supports:** The `serp_organic_live_advanced` tool supports Google, Bing, and Yahoo via the `se` parameter. Specify "bing" or "yahoo" to switch search engines.
 
@@ -153,7 +154,7 @@ which domains dominate image results, and identify visual content opportunities.
 
 **MCP tools:** `serp_google_images_live_advanced`
 
-**Default parameters:** location_code=2840 (US), language_code=en, device=desktop, depth=100
+**Default parameters:** location_code=2704 (Vietnam), language_code=vi, device=desktop, depth=100
 
 **Parameters:** keyword (required), depth (optional, max 700, billed per 100-result increment), search_param (optional, e.g. "site:example.com")
 
@@ -177,7 +178,7 @@ Generate keyword ideas, suggestions, and related terms from a seed keyword.
 
 **MCP tools:** `dataforseo_labs_google_keyword_ideas`, `dataforseo_labs_google_keyword_suggestions`, `dataforseo_labs_google_related_keywords`
 
-**Default parameters:** location_code=2840 (US), language_code=en, limit=50
+**Default parameters:** location_code=2704 (Vietnam), language_code=vi, limit=50
 
 **Output:** Keyword, search volume, CPC, competition level, keyword difficulty, trend.
 
@@ -249,7 +250,7 @@ List keywords a domain ranks for with positions and page data.
 
 **MCP tools:** `dataforseo_labs_google_ranked_keywords`, `dataforseo_labs_google_relevant_pages`
 
-**Default parameters:** limit=100, location_code=2840
+**Default parameters:** limit=100, location_code=2704
 
 **Output:** Keyword, position, URL, search volume, traffic share, SERP features.
 

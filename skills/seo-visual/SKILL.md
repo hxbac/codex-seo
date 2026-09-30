@@ -1,6 +1,6 @@
 ---
 name: seo-visual
-description: Visual specialist for full audits. Captures screenshots, evaluates above-the-fold signals, and checks mobile rendering basics.
+description: "Visual specialist for full audits. Captures screenshots, evaluates above-the-fold signals, and checks mobile rendering basics. Also use when the request is written in Vietnamese, for example \"chụp màn hình trang\", \"giao diện trên điện thoại\", \"nhìn trang có ổn không\", \"kiểm tra hiển thị mobile\"."
 ---
 
 # Visual Specialist

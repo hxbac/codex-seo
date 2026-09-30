@@ -6,6 +6,7 @@ description: >
   to your on-page SEO. Use when user says "SEO drift", "baseline", "track changes",
   "did anything break", "SEO regression", "compare SEO", "before and after",
   "monitor SEO changes", or "deployment check".
+  Also use when the request is written in Vietnamese, for example "thay đổi thứ hạng", "so với lần trước", "theo dõi biến động", "tuần này khác gì".
 user-invokable: true
 argument-hint: "baseline|compare|history <url>"
 license: MIT

@@ -10,6 +10,7 @@ description: >
   Business Profile", "GBP", "map pack", "local pack", "citations",
   "NAP consistency", "local rankings", "service area", "multi-location",
   or "local search".
+  Also use when the request is written in Vietnamese, for example "SEO địa phương", "SEO local", "doanh nghiệp địa phương", "khách gần đây".
 user-invokable: true
 argument-hint: "[url]"
 license: MIT

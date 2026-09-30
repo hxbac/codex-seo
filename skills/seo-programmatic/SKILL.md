@@ -6,6 +6,7 @@ description: >
   thin content safeguards, and index bloat prevention. Use when user says
   "programmatic SEO", "pages at scale", "dynamic pages", "template pages",
   "generated pages", or "data-driven SEO".
+  Also use when the request is written in Vietnamese, for example "SEO programmatic", "tạo hàng loạt trang", "sinh trang theo mẫu".
 user-invokable: true
 argument-hint: "[url or plan]"
 license: MIT

@@ -6,9 +6,9 @@ Supports product search, seller analysis, and cross-marketplace comparison.
 Uses task/poll pattern for standard queue (60-80% cost savings vs live).
 
 Usage:
-    python dataforseo_merchant.py search <keyword> [--marketplace google|amazon] [--location 2840]
-    python dataforseo_merchant.py sellers <keyword> [--location 2840]
-    python dataforseo_merchant.py compare <keyword> [--location 2840]
+    python dataforseo_merchant.py search <keyword> [--marketplace google|amazon] [--location 2704]
+    python dataforseo_merchant.py sellers <keyword> [--location 2704]
+    python dataforseo_merchant.py compare <keyword> [--location 2704]
 
 Environment: DATAFORSEO_USERNAME, DATAFORSEO_PASSWORD
 Output: JSON with normalized product data.
@@ -515,10 +515,10 @@ def main():
     def add_common(p):
         p.add_argument("keyword", help="Product search keyword")
         p.add_argument(
-            "--location", type=int, default=2840, help="Location code (default: 2840 = US)"
+            "--location", type=int, default=2704, help="Location code (default: 2704 = Vietnam)"
         )
         p.add_argument(
-            "--language", default="en", help="Language code (default: en)"
+            "--language", default="vi", help="Language code (default: vi)"
         )
 
     # search
