@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import traceback
@@ -58,17 +59,44 @@ def run_command(cmd: list[str], cwd: Path | None = None) -> dict[str, Any]:
     }
 
 
-def pip_install_requirements(venv_python: Path, requirements_file: Path, group: str, required: bool) -> dict[str, Any]:
-    """Install a requirements file and annotate the bootstrap step."""
-    step = run_command([
-        str(venv_python),
-        "-m",
-        "pip",
-        "install",
-        "--disable-pip-version-check",
-        "-r",
-        str(requirements_file),
-    ])
+def find_uv() -> str | None:
+    """Path of uv, or None. AI_CONTENT_NO_UV=1 forces the pip path; then $UV, PATH,
+    then the folders the official uv installers use (not on PATH until a new shell)."""
+    if os.environ.get("AI_CONTENT_NO_UV", "").strip().lower() in ("1", "true", "yes"):
+        return None
+    configured = os.environ.get("UV")
+    if configured and Path(configured).is_file():
+        return configured
+    found = shutil.which("uv")
+    if found:
+        return found
+    exe = "uv.exe" if os.name == "nt" else "uv"
+    for folder in (Path.home() / ".local" / "bin", Path.home() / ".cargo" / "bin"):
+        if (folder / exe).is_file():
+            return str(folder / exe)
+    return None
+
+
+def pip_install_requirements(
+    venv_python: Path, requirements_file: Path, group: str, required: bool, uv: str | None = None
+) -> dict[str, Any]:
+    """Install a requirements file and annotate the bootstrap step.
+
+    With uv the packages come from uv's shared cache by hardlink, so this venv costs
+    little disk next to the hub's other venvs."""
+    if uv:
+        cmd = [uv, "pip", "install", "--quiet", "--python", str(venv_python), "-r", str(requirements_file)]
+    else:
+        cmd = [
+            str(venv_python),
+            "-m",
+            "pip",
+            "install",
+            "--disable-pip-version-check",
+            "-r",
+            str(requirements_file),
+        ]
+    step = run_command(cmd)
     step["group"] = group
     step["required"] = required
     return step
@@ -106,10 +134,18 @@ def bootstrap_environment(
 ) -> dict[str, Any]:
     """Create/update a runtime venv and install core plus optional dependencies."""
     venv_dir = venv_dir or DEFAULT_VENV
+    uv = find_uv()
     created = False
     if not venv_dir.exists():
-        builder = venv.EnvBuilder(with_pip=True)
-        builder.create(venv_dir)
+        if uv:
+            made = run_command([uv, "venv", "--quiet", "--seed", "--python", sys.executable, str(venv_dir)])
+            if not made["ok"]:
+                # uv is an optimisation, never a requirement: fall back to venv plus pip.
+                shutil.rmtree(venv_dir, ignore_errors=True)
+                uv = None
+        if not uv:
+            builder = venv.EnvBuilder(with_pip=True)
+            builder.create(venv_dir)
         created = True
 
     venv_python = python_in_venv(venv_dir)
@@ -117,28 +153,29 @@ def bootstrap_environment(
         raise RuntimeError(f"Virtual environment Python not found: {venv_python}")
 
     steps = []
-    pip_step = run_command([
-        str(venv_python),
-        "-m",
-        "pip",
-        "install",
-        "--disable-pip-version-check",
-        "--upgrade",
-        "pip",
-    ])
-    pip_step["group"] = "pip"
-    pip_step["required"] = True
-    steps.append(pip_step)
+    if not uv:
+        pip_step = run_command([
+            str(venv_python),
+            "-m",
+            "pip",
+            "install",
+            "--disable-pip-version-check",
+            "--upgrade",
+            "pip",
+        ])
+        pip_step["group"] = "pip"
+        pip_step["required"] = True
+        steps.append(pip_step)
 
     core_requirements = CORE_REQUIREMENTS if CORE_REQUIREMENTS.exists() else ROOT / "requirements.txt"
-    core_step = pip_install_requirements(venv_python, core_requirements, "core", required=True)
+    core_step = pip_install_requirements(venv_python, core_requirements, "core", required=True, uv=uv)
     steps.append(core_step)
 
     visual_package_ready = core_step["ok"]
     if core_step["ok"]:
         for group, requirements_file in OPTIONAL_REQUIREMENT_GROUPS:
             if requirements_file.exists():
-                step = pip_install_requirements(venv_python, requirements_file, group, required=False)
+                step = pip_install_requirements(venv_python, requirements_file, group, required=False, uv=uv)
                 steps.append(step)
                 if group == "visual":
                     visual_package_ready = step["ok"]
@@ -177,6 +214,7 @@ def bootstrap_environment(
         "ok": ok,
         "full_ready": full_ready,
         "created_venv": created,
+        "installer": "uv" if uv else "pip",
         "venv": str(venv_dir),
         "python": str(venv_python),
         "optional_failed_groups": optional_failed_groups,

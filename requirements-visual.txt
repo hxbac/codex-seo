@@ -1,4 +1,6 @@
 # Codex SEO - Visual Workflow Dependencies
 # Optional for screenshots, visual analysis, and browser-backed checks.
 
-playwright>=1.56.0,<2.0.0
+# Exact pin: one Chromium build for the hub. Keep equal to hub config/constraints.txt
+# and claude-seo/requirements.txt (each Playwright release expects one Chromium).
+playwright==1.63.0

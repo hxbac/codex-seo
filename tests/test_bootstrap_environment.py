@@ -9,6 +9,13 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 
 import bootstrap_environment as bootstrap_module  # noqa: E402
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _pip_path_by_default(monkeypatch):
+    """The older tests describe the pip path; the uv tests turn uv back on."""
+    monkeypatch.setenv("AI_CONTENT_NO_UV", "1")
 
 
 def test_bootstrap_environment_allows_core_ready_without_playwright(monkeypatch, tmp_path: Path):
@@ -199,3 +206,107 @@ def test_bootstrap_cli_returns_json_on_unhandled_exception(monkeypatch, tmp_path
     assert stdout_payload["error"] == "venv module unavailable"
     assert stdout_payload["exception_type"] == "RuntimeError"
     assert file_payload == stdout_payload
+
+
+def _fake_recorder(calls, verification=None):
+    verification = verification or {"ready": True, "capabilities": {"core_ready": True, "full_ready": True}}
+
+    def fake_run_command(cmd, cwd=None):
+        calls.append(list(cmd))
+        text = " ".join(cmd)
+        stdout = json.dumps(verification) if "verify_environment.py" in text else ""
+        return {"cmd": cmd, "returncode": 0, "stdout": stdout, "stderr": "", "ok": True}
+
+    return fake_run_command
+
+
+def test_find_uv_honours_opt_out_and_override(monkeypatch, tmp_path: Path):
+    fake_uv = tmp_path / "uv"
+    fake_uv.write_text("", encoding="utf-8")
+    monkeypatch.setenv("UV", str(fake_uv))
+    assert bootstrap_module.find_uv() is None  # AI_CONTENT_NO_UV=1
+    monkeypatch.delenv("AI_CONTENT_NO_UV")
+    assert bootstrap_module.find_uv() == str(fake_uv)
+    monkeypatch.delenv("UV")
+    monkeypatch.setenv("PATH", str(tmp_path / "empty"))
+    monkeypatch.setattr(bootstrap_module.Path, "home", classmethod(lambda cls: tmp_path / "nohome"))
+    assert bootstrap_module.find_uv() is None
+
+
+def test_bootstrap_uses_uv_for_venv_and_installs_when_present(monkeypatch, tmp_path: Path):
+    monkeypatch.delenv("AI_CONTENT_NO_UV")
+    fake_uv = tmp_path / "uv"
+    fake_uv.write_text("", encoding="utf-8")
+    monkeypatch.setenv("UV", str(fake_uv))
+    venv_dir = tmp_path / "new-venv"
+    calls: list[list[str]] = []
+    recorder = _fake_recorder(calls)
+
+    def fake_run_command(cmd, cwd=None):
+        result = recorder(cmd, cwd)
+        if cmd[:2] == [str(fake_uv), "venv"]:
+            python = bootstrap_module.python_in_venv(venv_dir)
+            python.parent.mkdir(parents=True, exist_ok=True)
+            python.write_text("", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(bootstrap_module, "run_command", fake_run_command)
+    result = bootstrap_module.bootstrap_environment(venv_dir=venv_dir, install_playwright_browser=False)
+
+    assert result["ok"] is True
+    assert result["installer"] == "uv"
+    assert result["created_venv"] is True
+    assert calls[0][:3] == [str(fake_uv), "venv", "--quiet"]
+    installs = [c for c in calls if c[1:3] == ["pip", "install"]]
+    assert installs and all(c[0] == str(fake_uv) and "--python" in c for c in installs)
+    # No `python -m pip install --upgrade pip` step under uv.
+    assert not any("--upgrade" in c for c in calls)
+
+
+def test_bootstrap_without_uv_keeps_the_pip_path(monkeypatch, tmp_path: Path):
+    venv_dir = tmp_path / "fake-venv"
+    python_path = bootstrap_module.python_in_venv(venv_dir)
+    python_path.parent.mkdir(parents=True, exist_ok=True)
+    python_path.write_text("", encoding="utf-8")
+    calls: list[list[str]] = []
+    monkeypatch.setattr(bootstrap_module, "run_command", _fake_recorder(calls))
+    result = bootstrap_module.bootstrap_environment(venv_dir=venv_dir, install_playwright_browser=False)
+    assert result["installer"] == "pip"
+    pip_calls = [c for c in calls if c[1:4] == ["-m", "pip", "install"]]
+    assert any("--upgrade" in c for c in pip_calls)
+    assert any(str(bootstrap_module.CORE_REQUIREMENTS) in c for c in pip_calls)
+
+
+def test_uv_venv_failure_falls_back_to_the_builtin_venv(monkeypatch, tmp_path: Path):
+    monkeypatch.delenv("AI_CONTENT_NO_UV")
+    fake_uv = tmp_path / "uv"
+    fake_uv.write_text("", encoding="utf-8")
+    monkeypatch.setenv("UV", str(fake_uv))
+    venv_dir = tmp_path / "v"
+    built: list[Path] = []
+
+    class FakeBuilder:
+        def __init__(self, with_pip=False):
+            assert with_pip is True
+
+        def create(self, path):
+            built.append(Path(path))
+            python = bootstrap_module.python_in_venv(Path(path))
+            python.parent.mkdir(parents=True, exist_ok=True)
+            python.write_text("", encoding="utf-8")
+
+    calls: list[list[str]] = []
+    recorder = _fake_recorder(calls)
+
+    def fake_run_command(cmd, cwd=None):
+        result = recorder(cmd, cwd)
+        if cmd[:2] == [str(fake_uv), "venv"]:
+            result.update(ok=False, returncode=2)
+        return result
+
+    monkeypatch.setattr(bootstrap_module, "run_command", fake_run_command)
+    monkeypatch.setattr(bootstrap_module.venv, "EnvBuilder", FakeBuilder)
+    result = bootstrap_module.bootstrap_environment(venv_dir=venv_dir, install_playwright_browser=False)
+    assert built == [venv_dir]
+    assert result["installer"] == "pip"
+    assert result["ok"] is True
